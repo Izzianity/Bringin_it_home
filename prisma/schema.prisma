@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("user") // "user" | "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tracks       Track[]
+  posts        Post[]
+  tokenLedger  TokenLedger[]
+  listenEvents ListenEvent[]
+
+  @@index([email])
+}
+
+model Partner {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  kind         String   // "ai" | "api"
+  description  String?
+  ownerContact String?
+  status       String   @default("pending") // "pending" | "active" | "suspended"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  apiKeys   ApiKey[]
+  auditLogs PartnerAuditLog[]
+
+  @@index([status])
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  hashedKey String   @unique
+  scopes    String   // JSON array: ["tracks:read", "posts:read"]
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([partnerId])
+  @@index([expiresAt])
+}
+
+model PartnerAuditLog {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  route     String
+  method    String
+  scope     String
+  statusCode Int
+  timestamp DateTime @default(now())
+
+  @@index([partnerId, timestamp])
+}
+
+model Track {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  artist    String
+  duration  Int      // seconds
+  fileUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listenEvents ListenEvent[]
+
+  @@index([userId])
+}
+
+model ListenEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId    String
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  startedAt  DateTime
+  endedAt    DateTime?
+  duration   Int      @default(0) // seconds accumulated
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, trackId, createdAt])
+  @@index([userId, trackId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caption   String?
+  imageUrl  String
+  imageHash String   @unique // SHA256 for deduplication
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model TokenLedger {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount         Int
+  reason         String   // "listen" | "post"
+  sourceId       String   // trackId or postId
+  idempotencyKey String   @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, reason])
+}
