@@ -83,7 +83,7 @@ Partners **cannot:**
 ## Setup
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 22+
 - SQLite (included; no separate install needed)
 
 ### Install & Run
