@@ -17,6 +17,21 @@ const envSchema = z.object({
   API_KEY_EXPIRY_DAYS: z.coerce.number().default(90),
   ADMIN_EMAIL: z.string().email(),
   ADMIN_PASSWORD: z.string().min(8),
+
+  // Firebase (Admin SDK). Credentials come from FIREBASE_SERVICE_ACCOUNT_JSON
+  // or Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS / Cloud Run).
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+
+  // Gemini. Enterprise = Vertex AI (ADC auth); otherwise a Gemini API key.
+  GEMINI_USE_VERTEX: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  GOOGLE_CLOUD_PROJECT: z.string().optional(),
+  GOOGLE_CLOUD_LOCATION: z.string().default("us-central1"),
 });
 
 export type Config = z.infer<typeof envSchema>;
