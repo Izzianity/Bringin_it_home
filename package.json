@@ -4,6 +4,9 @@
   "description": "A platform where AI systems are partners with explicit, minimal permissions. Earn UTC tokens by listening to music and posting pictures.",
   "type": "module",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "NODE_ENV=development tsx watch src/index.ts",
     "build": "tsc",
